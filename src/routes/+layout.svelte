@@ -1,5 +1,6 @@
 <script lang="ts">
 	import './layout.css';
+	import './custom.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
@@ -43,11 +44,6 @@
 	onMount(async () => {
 		await initDB();
 		console.log('Database initialized');
-
-		if (typeof window !== 'undefined') {
-			const flowbiteModule = await import('flowbite');
-			flowbiteModule.initFlowbite();
-		}
 	});
 </script>
 
@@ -63,7 +59,7 @@
 		<a
 			href="#top"
 			onclick={(e) => scrollToSection(e, 'top')}
-			class="font-heading font-medium text-foreground hover:text-primary text-xs tracking-tight transition-colors"
+			class="font-heading font-medium text-foreground text-s hover:text-primary tracking-tight transition-colors"
 		>
 			<span class="font-bold; text-primary">&lt;</span>Stock Profitier<span class="text-primary"
 				>/&gt;</span
@@ -93,13 +89,13 @@
 
 		<button onclick={toggleMode} class="relative flex justify-center items-center">
 			<Sun
-			class="w-[1.2rem] h-[1.2rem] rotate-0 dark:-rotate-90 scale-100 dark:scale-0 transition-all duration-300 ease-in-out"
-		/>
-		<MoonStars
-			class="absolute w-[1.2rem] h-[1.2rem] rotate-90 dark:rotate-0 scale-0 dark:scale-100 transition-all duration-300 ease-in-out"
-		/>
+				class="w-[1.2rem] h-[1.2rem] rotate-0 dark:-rotate-90 scale-100 dark:scale-0 transition-all duration-300 ease-in-out"
+			/>
+			<MoonStars
+				class="absolute w-[1.2rem] h-[1.2rem] rotate-90 dark:rotate-0 scale-0 dark:scale-100 transition-all duration-300 ease-in-out"
+			/>
 		</button>
-		
+
 		<button
 			onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
 			class="md:hidden relative flex justify-center items-center"
@@ -144,7 +140,7 @@
 	</div>
 {/if}
 
-		<ModeWatcher />
+<ModeWatcher />
 <main>
 	{@render children?.()}
 </main>

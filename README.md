@@ -14,7 +14,7 @@ Icon
 Stock Profitier is a lightweight Android app that lets you easily track your stock trading profits without relying on a broker.
 With Stock Profitier, you manually enter when you buy and sell stocks, allowing you to view a graphical overview and detailed insights into your overall trading performance.
 
-_This project was made without relying on AI coding help to make myself less dependant from it_
+_This project was made without heavily relying on AI coding to avoid becoming a vibe coder #aiisgonnatakeovertheworld_
 
 This and the wish to create a bit more complicated svelte android app with database while also trying out the flowbite chart library was the inspiration to create Stock Profitier
 

@@ -1,37 +1,82 @@
-import { CapacitorSQLite } from '@capacitor-community/sqlite';
-import type { SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { Capacitor } from '@capacitor/core';
+import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 
+
+const sqlite = new SQLiteConnection(CapacitorSQLite);
 let db: SQLiteDBConnection | undefined;
 
+
+
 export async function initDB() {
-  if (db) return db; // Already initialized
+  if (db) return db;
 
-  const sqlite = CapacitorSQLite;
+  if (!Capacitor.isNativePlatform()) throw new Error("SQLite only supported on native");
 
-  const connection: any = await sqlite.createConnection({ // Returns type as any
-    database: 'trades_db',
-    version: 1,
-    encrypted: false,
-    mode: 'no-encryption'
-  });
-
-  db = connection as SQLiteDBConnection;
-
-  await db!.open();
-
-  await db!.execute(`
-    CREATE TABLE IF NOT EXISTS trades (
-      id TEXT PRIMARY KEY,
-      symbol TEXT NOT NULL,
-      quantity REAL NOT NULL,
-      buyPrice REAL NOT NULL,
-      buyDate TEXT NOT NULL,
-      sellPrice REAL,
-      sellDate TEXT,
-      createdAt TEXT NOT NULL,
-      updatedAt TEXT NOT NULL
-    );
-  `);
+  // Check if a connection already exists
+  const isConn = await sqlite.isConnection("trades_db", false);
+  if (isConn.result) {
+    // Retrieve existing connection
+    db = await sqlite.retrieveConnection("trades_db", false);
+    // Make sure the connection is open
+    await db.open();
+  } else {
+    // Create a new connection
+    db = await sqlite.createConnection("trades_db", false, "no-encryption", 1, false);
+    await db.open();
+    // Create table
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS trades (
+        id TEXT PRIMARY KEY,
+        symbol TEXT NOT NULL,
+        buyDate DATE NOT NULL,
+        quantity REAL NOT NULL,
+        buyPrice REAL NOT NULL,
+        note TEXT,
+        createdAt TEXT NOT NULL,
+        sellDate DATE,
+        sellPrice REAL,
+        updatedAt TEXT
+      );
+    `);
+  }
 
   return db;
 }
+
+export async function getDB() {
+  if (!db) {
+    await initDB();
+  }
+
+  const result = await db!.query(`SELECT * FROM trades;`);
+
+  return result.values || [];
+}
+
+export async function addTestTrade() {
+  if (!db) {
+    await initDB();
+  }
+
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  await db!.run(`
+    INSERT INTO trades (id, symbol, quantity, buyPrice, buyDate, createdAt, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?);
+  `, [id, 'Cloudflare', 10, 150.00, now, now, now]);
+}
+
+export async function enterNewStockToDB(symbol: string, buyDate: Date, quantity: number, buyPrice: number,  createdAt: Date, note?: string, sellDate?: Date, sellPrice?: number, updatedAt?: string) {
+  const id = crypto.randomUUID(); // Check if it creates real unique IDs
+  const now = new Date().toISOString();
+
+  try {
+
+    await db!.run(`
+      INSERT INTO trades (id, symbol, quantity, buyPrice, buyDate, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?);
+      `, [id, symbol, quantity, buyPrice, buyDate.toISOString(), createdAt.toISOString(), updatedAt ? updatedAt : now]);
+      } catch (error) {
+        console.error("Error inserting new stock trade: ", error);
+      }
+}   

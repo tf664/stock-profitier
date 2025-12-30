@@ -1,8 +1,11 @@
 <script lang="ts">
 	import type { ApexOptions } from 'apexcharts';
 	import { Chart } from '@flowbite-svelte-plugins/chart';
-	import { Card, A, Button, Dropdown, DropdownItem } from 'flowbite-svelte';
-	import { ArrowUpOutline, ChevronDownOutline, ChevronRightOutline } from 'flowbite-svelte-icons';
+	import * as Card from '$lib/components/ui/card';
+	import { Button } from '$lib/components/ui/button';
+	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 
 	import { chartData } from '$lib/utils/dataHandler';
 
@@ -84,48 +87,45 @@
 	};
 </script>
 
-<Card class="chart-card">
-	<div class="chart-header">
-		<dl>
-			<dt class="chart-title">Profit</dt>
-			<dd class="chart-value">hc 5,405€</dd>
-		</dl>
+<Card.Root class="chart-card">
+	<Card.Header class="chart-header">
 		<div>
-			<span class="chart-badge">
-				<ArrowUpOutline class="me-1.5 w-2.5 h-2.5" />
+			<Card.Title class="chart-title">Profit</Card.Title>
+			<p class="chart-value">hc 5,405€</p>
+		</div>
+		<div>
+			<span class="inline-flex items-center gap-1.5 chart-badge">
+				<ArrowUpIcon class="w-2.5 h-2.5" />
 				Profit rate 23.5% hc
 			</span>
 		</div>
-	</div>
+	</Card.Header>
 
-	<div class="chart-stats-grid">
-		<dl>
-			<dt class="chart-stat-label">Income</dt>
-			<dd class="chart-income">hc €23,635€</dd>
-		</dl>
-		<dl>
-			<dt class="chart-stat-label">Expense</dt>
-			<dd class="chart-expense">hc -18,230€</dd>
-		</dl>
-	</div>
-
-	<Chart {options} />
-	<div class="chart-footer">
-		<div class="chart-footer-content">
-			<Button class="chart-button">
-				Last 7 days<ChevronDownOutline class="m-2.5 ms-1.5 w-2.5" />
-			</Button>
-			<Dropdown simple class="w-40" offset={-6}>
-				<DropdownItem>Yesterday</DropdownItem>
-				<DropdownItem>Today</DropdownItem>
-				<DropdownItem>Last 7 days</DropdownItem>
-				<DropdownItem>Last 30 days</DropdownItem>
-				<DropdownItem>Last 90 days</DropdownItem>
-			</Dropdown>
-			<A href="/" class="chart-link">
-				Leads Report
-				<ChevronRightOutline class="ms-1.5 w-2.5 h-2.5" />
-			</A>
+	<Card.Content>
+		<div class="chart-stats-grid">
+			<dl>
+				<dt class="chart-stat-label">Income</dt>
+				<dd class="chart-income">hc €23,635€</dd>
+			</dl>
+			<dl>
+				<dt class="chart-stat-label">Expense</dt>
+				<dd class="chart-expense">hc -18,230€</dd>
+			</dl>
 		</div>
-	</div>
-</Card>
+
+		<Chart {options} />
+	</Card.Content>
+
+	<Card.Footer class="chart-footer">
+		<div class="chart-footer-content">
+			<Button variant="ghost" class="chart-button">
+				Last 7 days
+				<ChevronDownIcon class="ml-2 w-2.5 h-2.5" />
+			</Button>
+			<Button href="/" variant="link" class="chart-link">
+				Leads Report
+				<ChevronRightIcon class="ml-1.5 w-2.5 h-2.5" />
+			</Button>
+		</div>
+	</Card.Footer>
+</Card.Root>
