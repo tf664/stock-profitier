@@ -1,22 +1,36 @@
-# sv
+# Stock-Profitier
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+<div align="center">
+<!-- 
+  <img src="static\RetroMorseTranslatorIcon.png" alt="App Icon" width="120" />
+-->
+Icon
+</div>
 
-## Creating a project
+---
 
-If you're seeing this, you've probably already done this step. Congrats!
+## About
 
-```sh
-# create a new project in the current directory
-npx sv create
+Stock Profitier is a lightweight Android app that lets you easily track your stock trading profits without relying on a broker.
+With Stock Profitier, you manually enter when you buy and sell stocks, allowing you to view a graphical overview and detailed insights into your overall trading performance.
 
-# create a new project in my-app
-npx sv create my-app
-```
+_This project was made without relying on AI coding help to make myself less dependant from it_
+
+This and the wish to create a bit more complicated svelte android app with database while also trying out the flowbite chart library was the inspiration to create Stock Profitier
+
+
+<div align="center">
+  <!-- Placeholder for preview screenshots -->
+ <!-- <img src="static\RetroMorseTranslatorIRelease Graphic-export.png" alt="App graphics banner" width="600" /> -->
+ Bigger icon 
+</div>
+
+Built with **Svelte** and wrapped with **Capacitor** to bring it to Android devices.
+
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Once you've created a project and installed dependencies with `npm install`, start a development server:
 
 ```sh
 npm run dev
@@ -25,14 +39,22 @@ npm run dev
 npm run dev -- --open
 ```
 
-## Building
-
-To create a production version of your app:
+To test the webapp on android do the following:
 
 ```sh
 npm run build
+npx cap copy
 ```
 
-You can preview the production build with `npm run preview`.
+To connect your phone with android studio:
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```sh
+cd %LOCALAPPDATA%\Android\sdk\platform-tools
+adb pair <PHONE_IP>:<PHONE_PORT>
+adb connect <PHONE_IP>:<PORT_PROVIDED>
+```
+
+To see console.log/warn.etc visit and insert IP & port
+chrome://inspect/#devices
+
+## TODO

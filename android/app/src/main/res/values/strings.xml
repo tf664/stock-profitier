@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">stock-profitier</string>
+    <string name="title_activity_main">stock-profitier</string>
+    <string name="package_name">com.krowastudios.stockprofitier</string>
+    <string name="custom_url_scheme">com.krowastudios.stockprofitier</string>
+</resources>
