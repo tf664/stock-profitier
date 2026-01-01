@@ -66,7 +66,7 @@ export async function addTestTrade() {
   `, [id, 'Cloudflare', 10, 150.00, now, now, now]);
 }
 
-export async function enterNewStockToDB(symbol: string, buyDate: Date, quantity: number, buyPrice: number,  createdAt: Date, note?: string, sellDate?: Date, sellPrice?: number, updatedAt?: string) {
+export async function enterNewBuyStockToDB(symbol: string, buyDate: Date, quantity: number, buyPrice: number,  createdAt: Date, note?: string, updatedAt?: string) {
   const id = crypto.randomUUID(); // Check if it creates real unique IDs
   const now = new Date().toISOString();
 
@@ -79,4 +79,18 @@ export async function enterNewStockToDB(symbol: string, buyDate: Date, quantity:
       } catch (error) {
         console.error("Error inserting new stock trade: ", error);
       }
-}   
+}
+
+export async function enterNewSellStockToDB(symbol: string, sellDate: Date, quantity: number, sellPrice: number,  createdAt: Date, note?: string, updatedAt?: string) {
+try {
+  await db!.run(`
+    UPDATE trades
+    SET sellDate = ?, sellPrice = ?, updatedAt = ?
+    WHERE symbol = ? AND quantity = ? AND sellDate IS NULL;
+    `, [sellDate.toISOString(), sellPrice, createdAt.toISOString(), symbol, quantity]);
+}
+catch (error) {
+  console.error("Error inserting new stock trade: ", error);
+}
+}
+

@@ -37,6 +37,8 @@ npm run dev
 
 # or start the server and open the app in a new browser tab
 npm run dev -- --open
+
+chrome://inspect/#devices
 ```
 
 To test the webapp on android do the following:
@@ -58,3 +60,8 @@ To see console.log/warn.etc visit and insert IP & port
 chrome://inspect/#devices
 
 ## TODO
+- [] Investigate and review SQL database structure
+- [] Update Stock DB Entry when entering sell entry
+- [] Validate changes to entry (maybe change history)
+- [] Adjust charts to DB data
+- adb pull /data/data/com.krowastudios.stockprofitier/trades_db.db

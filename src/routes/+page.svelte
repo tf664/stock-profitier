@@ -4,7 +4,8 @@
 	let showDataEntry = $state(false);
 
 	import { addTestTrade, getDB } from '$lib/database/db'; // DEBUG
-	let result = $state('');
+	import { Capacitor } from '@capacitor/core';
+	let result = $state('test');
 </script>
 
 <!-- Page Content -->
@@ -23,22 +24,31 @@
 
 		<div>
 			<!-- DEBUG -->
+			<h2>Database Debug Test</h2>
 			<button
 				onclick={async () => {
-					await addTestTrade();
+					if (Capacitor.isNativePlatform()) {
+						await addTestTrade();
+					} else {
+						console.log('SQLite only works on native platform');
+					}
 				}}
 				class="btn-cancel">ADD TEST TRADE</button
 			>
 
 			<button
 				onclick={async () => {
-					const data = await getDB();
-					result = JSON.stringify(data, null, 2);
+					if (Capacitor.isNativePlatform()) {
+						const data = await getDB();
+						result = JSON.stringify(data, null, 2);
+					} else {
+						result = 'SQLite only works on native platform';
+					}
 				}}
 				class="btn-cancel">Get DB</button
 			>
 
-			<textarea readonly style="width: 100%; height: 200px; margin-top: 1rem;">{result}</textarea>
+			<textarea readonly id="debugTest" style="width: 100%; height: 200px; margin-top: 1rem;">{result}</textarea>
 		</div>
 
 		<h3>Graphes</h3>

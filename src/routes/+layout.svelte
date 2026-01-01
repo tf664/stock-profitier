@@ -14,6 +14,7 @@
 	import { FileSliders } from '@lucide/svelte';
 
 	import { initDB } from '$lib/database/db';
+	import { Capacitor } from '@capacitor/core';
 
 	let { children } = $props();
 
@@ -42,14 +43,17 @@
 	}
 
 	onMount(async () => {
-		await initDB();
-		console.log('Database initialized');
+		if (Capacitor.isNativePlatform()) {
+			await initDB();
+			console.log('Database initialized');
+		} else {
+			console.log('Running in browser - SQLite not available');
+		}
 	});
 </script>
 
 <svelte:head
 	><link rel="icon" href={favicon} />
-	<link rel="stylesheet" href="styles.css" />
 </svelte:head>
 
 <header

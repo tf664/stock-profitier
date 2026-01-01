@@ -1,35 +1,52 @@
 <script lang="ts">
-    import { enterNewStockToDB } from '$lib/database/db';
+import { enterNewBuyStockToDB } from '$lib/database/db';
 
-	interface Props {
-		onClose?: () => void;
-	}
+interface Props {
+	onClose?: () => void;
+}
 
-	let { onClose }: Props = $props();
+let { onClose }: Props = $props();
 
-	let buyEntry = $state(true);
+let buyEntry = $state(true);
 
-	let stockName = $state('');
-	let date = $state('');
-	let price = $state('');
-	let notes = $state('');
-    let quantity = $state('');
+let stockName = $state('');
+let date = $state('');
+let price = $state(1.0);
+let notes = $state('');
+let quantity = $state(1);
 
-	// Computed reactive state
-	const isFormValid = $derived(stockName.trim().length > 0 && date.trim().length > 0 && parseFloat(price) > 0 && parseFloat(quantity) > 0);
+// Computed reactive state
+const isValidStockName = $derived(stockName.length > 0);
+const isValidDate = $derived(date.length > 0);
+const isValidPrice = $derived(price > 0);
+const isValidQuantity = $derived(quantity > 0);
+const isFormValid = $derived(isValidStockName && isValidDate && isValidPrice && isValidQuantity);
 
-	function saveEntry() {
-		// your save logic here
-		if (isFormValid) {
-			console.log('Saving entry:', {
-				type: buyEntry ? 'Buy' : 'Sell',
+function saveEntry() {
+	// your save logic here
+	if (isFormValid) {
+		console.log('Saving entry:', {
+			type: buyEntry ? 'Buy' : 'Sell',
+			stockName,
+			date,
+			price: parseFloat(price),
+			notes
+		});
+
+		if (buyEntry) {
+			enterNewBuyStockToDB(
 				stockName,
-				date,
-				price: parseFloat(price),
-				notes
-			});
+				new Date(date),
+				quantity,
+				parseFloat(price),
+				new Date(),
+				notes ? notes : undefined
+			);
+		} else if (!buyEntry) {
+			// enterNewSellStockToDB(stockName, date, quantity, price, new Date(), notes ? notes : undefined);
 		}
 	}
+}
 </script>
 
 <div id="data-entry-card" class="data-entry-container">
@@ -49,7 +66,6 @@
 	</div>
 
 	<!-- Stock Name -->
-
 	<div class="field">
 		<label for="stock-name" class={isValidStockName ? 'text-green-600' : ''}> Stock Name </label>
 		<input
@@ -76,15 +92,17 @@
 		/>
 	</div>
 
-    <!-- Quantitity -->
-    <div class="field">
-		<label for="quantity" class={isValidStockName ? 'text-green-600' : ''}> Quantity </label>
+	<!-- Quantitity -->
+	<div class="field">
+		<label for="quantity" class={isValidQuantity ? 'text-green-600' : ''}> Quantity </label>
 		<input
 			id="quantity"
 			bind:value={quantity}
-			type="text"
-			placeholder="AAPL"
-			class="rounded border px-2 py-1 transition outline-none {isValidStockName
+			type="number"
+			step="0.5"
+			min="0"
+			placeholder="10"
+			class="rounded border px-2 py-1 transition outline-none {isValidQuantity
 				? 'border-green-500 focus:border-green-600'
 				: 'border-primary-300 focus:border-primary-400'}"
 		/>
@@ -125,6 +143,13 @@
 	<!-- Actions -->
 	<div class="actions">
 		<button class="btn-cancel" onclick={() => onClose?.()}>Cancel</button>
-		<button class="btn-standard" onclick={saveEntry}>Save Entry</button>
+		<button
+			class="active:brightness-90 active:scale-95 transition-transform btn-standard"
+			style:background-color={!isFormValid ? 'var(--color-primary-deactivated)' : ''}
+			style:opacity={!isFormValid ? '0.6' : '1'}
+			onclick={saveEntry}
+		>
+			Save Entry
+		</button>
 	</div>
 </div>
