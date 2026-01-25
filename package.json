@@ -47,8 +47,9 @@
 	},
 	"dependencies": {
 		"@capacitor-community/sqlite": "^7.0.2",
-		"@capacitor/android": "^8.0.0",
-		"@capacitor/cli": "^8.0.0",
+		"@capacitor/android": "^8.0.1",
+		"@capacitor/cli": "^8.0.1",
+		"@capacitor/core": "^8.0.1",
 		"@flowbite-svelte-plugins/chart": "^0.2.4",
 		"apexcharts": "^5.3.6",
 		"lucide-svelte": "^0.562.0",
