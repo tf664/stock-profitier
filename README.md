@@ -65,3 +65,5 @@ chrome://inspect/#devices
 - [] Validate changes to entry (maybe change history)
 - [] Adjust charts to DB data
 - adb pull /data/data/com.krowastudios.stockprofitier/trades_db.db
+
+- Consider using index sql to optimize query (expecially for long query data)

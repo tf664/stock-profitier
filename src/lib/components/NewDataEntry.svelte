@@ -1,52 +1,153 @@
 <script lang="ts">
-import { enterNewBuyStockToDB } from '$lib/database/db';
+	import {
+		AlertDialog,
+		AlertDialogAction,
+		AlertDialogContent,
+		AlertDialogDescription,
+		AlertDialogFooter,
+		AlertDialogHeader,
+		AlertDialogTitle
+	} from '$lib/components/ui/alert-dialog';
 
-interface Props {
-	onClose?: () => void;
-}
+	import Calendar from '$lib/components/ui/calendar/calendar.svelte';
+	import * as Popover from '$lib/components/ui/popover/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import * as Command from '$lib/components/ui/command/index.js';
+	import * as Drawer from '$lib/components/ui/drawer/index.js';
 
-let { onClose }: Props = $props();
+	import {
+		enterNewBuyStockToDB,
+		enterNewSellStockToDB,
+		getAvailableSellEntries
+	} from '$lib/database/db';
 
-let buyEntry = $state(true);
+	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
+	import { getLocalTimeZone, today, type CalendarDate } from '@internationalized/date';
 
-let stockName = $state('');
-let date = $state('');
-let price = $state(1.0);
-let notes = $state('');
-let quantity = $state(1);
+	const id = $props.id();
 
-// Computed reactive state
-const isValidStockName = $derived(stockName.length > 0);
-const isValidDate = $derived(date.length > 0);
-const isValidPrice = $derived(price > 0);
-const isValidQuantity = $derived(quantity > 0);
-const isFormValid = $derived(isValidStockName && isValidDate && isValidPrice && isValidQuantity);
+	let open = $state(false);
 
-function saveEntry() {
-	// your save logic here
-	if (isFormValid) {
-		console.log('Saving entry:', {
-			type: buyEntry ? 'Buy' : 'Sell',
-			stockName,
-			date,
-			price: parseFloat(price),
-			notes
-		});
+	interface Props {
+		onClose?: () => void;
+	}
 
-		if (buyEntry) {
-			enterNewBuyStockToDB(
-				stockName,
-				new Date(date),
-				quantity,
-				parseFloat(price),
-				new Date(),
-				notes ? notes : undefined
-			);
-		} else if (!buyEntry) {
-			// enterNewSellStockToDB(stockName, date, quantity, price, new Date(), notes ? notes : undefined);
+	let { onClose }: Props = $props();
+
+	let sellOptionsLoaded = $state(false);
+	type Status = {
+		value: string;
+		label: string;
+		quantity: number;
+	};
+	let sellOptions: Status[] = $state([]);
+
+	let sellComboBoxOpen = $state(false);
+	let selectedSellCB: Status | null = $state(null);
+	let isDesktop = $state(false);
+
+	function checkScreenSize() {
+		isDesktop = window.innerWidth >= 768;
+	}
+
+	onMount(() => {
+		if (browser) {
+			checkScreenSize();
+			window.addEventListener('resize', checkScreenSize);
+			return () => window.removeEventListener('resize', checkScreenSize);
+		}
+	});
+
+	$effect(() => {
+		if (!buyEntry && !sellOptionsLoaded) {
+			fillSellOptions();
+			sellOptionsLoaded = true;
+		} else if (buyEntry) sellOptionsLoaded = false;
+	});
+
+	function handleSellComboBox(value: string) {
+		selectedSellCB = sellOptions.find((sell) => sell.value === value) || null;
+		sellComboBoxOpen = false;
+	}
+
+	async function fillSellOptions() {
+		sellOptions = [];
+
+		const availableEntries = await getAvailableSellEntries();
+
+		if (availableEntries.length === 0) {
+			sellOptions.push({ value: 'no-entries', label: 'No available sell entries', quantity: 0 });
+			return;
+		}
+
+		for (const entry of availableEntries) {
+			sellOptions.push({ value: entry.id, label: entry.symbol, quantity: entry.availableQuantity });
 		}
 	}
-}
+
+	let buyEntry = $state(true);
+
+	let stockName = $state('');
+	let stockSymbols = [
+		'AAPL',
+		'MSFT',
+		'GOOGL',
+		'AMZN',
+		'TSLA',
+		'META',
+		'NVDA',
+		'NFLX',
+		'AMD',
+		'INTC'
+	];
+	let buyDate = $state<CalendarDate | undefined>();
+	let price = $state(1.0);
+	let notes = $state('');
+	let quantity = $state(1);
+
+	let showSuccessDialog = $state(false);
+	let savedEntryDetails = $state('');
+
+	// Computed reactive state
+	const isValidStockName = $derived(stockName.length > 0);
+	const isValidDate = $derived(buyDate !== undefined);
+	const isValidPrice = $derived(price > 0);
+	const isValidQuantity = $derived(quantity > 0);
+	const isFormValid = $derived(isValidStockName && isValidDate && isValidPrice && isValidQuantity);
+
+	function saveEntry() {
+		// your save logic here
+		if (isFormValid) {
+			console.log('Saving entry:', {
+				type: buyEntry ? 'Buy' : 'Sell',
+				stockName,
+				date: buyDate,
+				price: price,
+				notes
+			});
+
+			if (buyEntry && buyDate) {
+				enterNewBuyStockToDB(
+					stockName,
+					buyDate.toDate(getLocalTimeZone()),
+					quantity,
+					price,
+					notes ?? undefined
+				);
+			} else if (!buyEntry) {
+				enterNewSellStockToDB();
+			}
+
+			fillSellOptions();
+
+			// Set success message and show dialog
+			savedEntryDetails = `${buyEntry ? 'Buy' : 'Sell'} order for ${quantity} shares of ${stockName} at $${price.toFixed(2)} saved successfully!`;
+			showSuccessDialog = true;
+		}
+	}
 </script>
 
 <div id="data-entry-card" class="data-entry-container">
@@ -68,28 +169,104 @@ function saveEntry() {
 	<!-- Stock Name -->
 	<div class="field">
 		<label for="stock-name" class={isValidStockName ? 'text-green-600' : ''}> Stock Name </label>
-		<input
-			id="stock-name"
-			bind:value={stockName}
-			type="text"
-			placeholder="AAPL"
-			class="rounded border px-2 py-1 transition outline-none {isValidStockName
-				? 'border-green-500 focus:border-green-600'
-				: 'border-primary-300 focus:border-primary-400'}"
-		/>
+		{#if buyEntry}
+			<input
+				id="stock-name"
+				bind:value={stockName}
+				type="text"
+				list="stock-symbols"
+				placeholder="AAPL"
+				class="rounded border px-2 py-1 transition outline-none {isValidStockName
+					? 'border-green-500 focus:border-green-600'
+					: 'border-primary-300 focus:border-primary-400'}"
+			/>
+			<datalist id="stock-symbols">
+				{#each stockSymbols as symbol}
+					<option value={symbol}></option>
+				{/each}
+			</datalist>
+		{:else if isDesktop}
+			<Popover.Root bind:open>
+				<Popover.Trigger>
+					<Button variant="outline" class="w-[150px] justify-start">
+						{selectedSellCB ? selectedSellCB.label : '+ Set Selling Stock'}
+					</Button>
+				</Popover.Trigger>
+				<Popover.Content class="w-[200px] p-0" align="start">
+					<Command.Root>
+						<Command.Input placeholder="Select selling stock..." />
+						<Command.List>
+							<Command.Empty>No results found.</Command.Empty>
+							<Command.Group>
+								{#each sellOptions as option (option.value)}
+									<Command.Item
+										value={option.value}
+										onSelect={() => handleSellComboBox(option.value)}
+									>
+										{option.label}
+									</Command.Item>
+								{/each}
+							</Command.Group>
+						</Command.List>
+					</Command.Root>
+				</Popover.Content>
+			</Popover.Root>
+		{:else}
+			<Drawer.Root bind:open>
+				<Drawer.Trigger>
+					<Button variant="outline" class="w-[150px] justify-start">
+						{selectedSellCB ? selectedSellCB.label : '+ Set Selling Stock'}
+					</Button>
+				</Drawer.Trigger>
+				<Drawer.Content>
+					<div class="mt-4 border-t">
+						<Command.Root>
+							<Command.Input placeholder="Select selling stock..." />
+							<Command.List>
+								<Command.Empty>No results found.</Command.Empty>
+								<Command.Group>
+									{#each sellOptions as option (option.value)}
+										<Command.Item
+											value={option.value}
+											onSelect={() => handleSellComboBox(option.value)}
+										>
+											{option.label}
+										</Command.Item>
+									{/each}
+								</Command.Group>
+							</Command.List>
+						</Command.Root>
+					</div>
+				</Drawer.Content>
+			</Drawer.Root>
+		{/if}
 	</div>
 
 	<!-- Date -->
 	<div class="field">
-		<label for="date">Date</label>
-		<input
-			id="date"
-			bind:value={date}
-			type="date"
-			class="rounded border px-2 py-1 transition outline-none {isValidDate
-				? 'border-green-500 focus:border-green-600'
-				: 'border-primary-300 focus:border-primary-400'}"
-		/>
+		<!-- 	<div class="flex flex-col gap-3">-->
+		<Label for="{id}-date" class="px-1">Date of birth</Label>
+		<Popover.Root bind:open>
+			<Popover.Trigger id="{id}-date">
+				{#snippet child({ props })}
+					<Button {...props} variant="outline" class="w-48 justify-between font-normal">
+						{buyDate ? buyDate.toDate(getLocalTimeZone()).toLocaleDateString() : 'Select date'}
+						<ChevronDownIcon />
+					</Button>
+				{/snippet}
+			</Popover.Trigger>
+			<Popover.Content class="w-auto overflow-hidden p-0" align="start">
+				<Calendar
+					type="single"
+					bind:value={buyDate}
+					captionLayout="dropdown"
+					onValueChange={() => {
+						open = false;
+					}}
+					maxValue={today(getLocalTimeZone())}
+				/>
+			</Popover.Content>
+		</Popover.Root>
 	</div>
 
 	<!-- Quantitity -->
@@ -153,3 +330,24 @@ function saveEntry() {
 		</button>
 	</div>
 </div>
+
+<AlertDialog bind:open={showSuccessDialog}>
+	<AlertDialogContent>
+		<AlertDialogHeader>
+			<AlertDialogTitle>Entry Saved</AlertDialogTitle>
+			<AlertDialogDescription>
+				{savedEntryDetails}
+			</AlertDialogDescription>
+		</AlertDialogHeader>
+		<AlertDialogFooter>
+			<AlertDialogAction
+				onclick={() => {
+					showSuccessDialog = false;
+					onClose?.();
+				}}
+			>
+				OK
+			</AlertDialogAction>
+		</AlertDialogFooter>
+	</AlertDialogContent>
+</AlertDialog>

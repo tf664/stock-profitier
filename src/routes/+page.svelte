@@ -3,7 +3,7 @@
 
 	let showDataEntry = $state(false);
 
-	import { addTestTrade, getDB } from '$lib/database/db'; // DEBUG
+	import { addTestTrade, getDBAllBuys } from '$lib/database/db'; // DEBUG
 	import { Capacitor } from '@capacitor/core';
 	let result = $state('test');
 </script>
@@ -39,7 +39,7 @@
 			<button
 				onclick={async () => {
 					if (Capacitor.isNativePlatform()) {
-						const data = await getDB();
+						const data = await getDBAllBuys();
 						result = JSON.stringify(data, null, 2);
 					} else {
 						result = 'SQLite only works on native platform';
