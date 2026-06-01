@@ -64,7 +64,12 @@ chrome://inspect/#devices
 ## TODO
 - [] Review new SQL database structure
 - [] Graphes display db info
+- [] Bug: Sell options don't update and remove themselves
+- [] Charts  don't update
 - [] restyle Nav top bar
+- [] Debug mode
+- [] Language settings
+- [] Clicking on the logo doesn't scroll to the top top
 
 
 - adb pull /data/data/com.krowastudios.stockprofitier/trades_db.db

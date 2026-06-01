@@ -3,6 +3,10 @@
 	import { addBuy, getAllBuys } from '$lib/database/db';
 	import { Capacitor } from '@capacitor/core';
 
+	import PortfolioPieChart from '$lib/components/ui/charts/PortfolioPieChart.svelte';
+	import MonthlyVolumeChart from '$lib/components/ui/charts/MonthlyVolumeChart.svelte';
+	import OpenPositionsChart from '$lib/components/ui/charts/OpenPositionsChart.svelte';
+
 	let showDataEntry = $state(false);
 	let result = $state('');
 </script>
@@ -25,8 +29,11 @@
 			<h2>Database Debug</h2>
 			<button
 				onclick={async () => {
-					if (!Capacitor.isNativePlatform()) { result = 'SQLite nur auf nativer Plattform'; return; }
-					await addBuy('AAPL', new Date(), 10, 150.00, 3.90, 'EUR', 'Test');
+					if (!Capacitor.isNativePlatform()) {
+						result = 'SQLite nur auf nativer Plattform';
+						return;
+					}
+					await addBuy('AAPL', new Date(), 10, 150.0, 3.9, 'EUR', 'Test');
 					result = 'Test-Kauf hinzugefügt';
 				}}
 				class="btn-cancel">Test-Kauf hinzufügen</button
@@ -34,7 +41,10 @@
 
 			<button
 				onclick={async () => {
-					if (!Capacitor.isNativePlatform()) { result = 'SQLite nur auf nativer Plattform'; return; }
+					if (!Capacitor.isNativePlatform()) {
+						result = 'SQLite nur auf nativer Plattform';
+						return;
+					}
 					const data = await getAllBuys();
 					result = JSON.stringify(data, null, 2);
 				}}
@@ -45,8 +55,14 @@
 		</div>
 
 		<h3>Graphes</h3>
-		<div id="barchart" style="margin: 0.5rem;">
+		<!-- <div id="barchart" style="margin: 0.5rem;">
 			<BarChart />
+		</div> -->
+
+		<div class="flex flex-col gap-4 p-4">
+			<PortfolioPieChart />
+			<MonthlyVolumeChart />
+			<OpenPositionsChart />
 		</div>
 	</div>
 </main>

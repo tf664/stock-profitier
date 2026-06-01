@@ -193,3 +193,48 @@ export async function getTransactionHistory(symbol: string) {
   `, [symbol, symbol]);
   return result.values ?? [];
 }
+
+export interface PortfolioBySymbol {
+  symbol: string;
+  totalInvested: number;  // quantity * buyPrice + fees
+  totalValue: number;     // wird später mit aktuellem Kurs berechnet
+}
+
+/** Investiertes Kapital pro Symbol (für Pie/Bar Chart) */
+export async function getInvestedPerSymbol(): Promise<PortfolioBySymbol[]> {
+  const db = await getDB();
+  const result = await db.query(`
+    SELECT
+      symbol,
+      ROUND(SUM(quantity * buyPrice) + SUM(fees), 2) AS totalInvested
+    FROM buys
+    GROUP BY symbol
+    ORDER BY totalInvested DESC;
+  `);
+  return (result.values ?? []) as PortfolioBySymbol[];
+}
+
+export interface MonthlyTransaction {
+  month: string;   // z.B. "2024-03"
+  bought: number;
+  sold: number;
+}
+
+/** Kauf- und Verkaufsvolumen pro Monat (für Bar/Line Chart) */
+export async function getMonthlyVolume(): Promise<MonthlyTransaction[]> {
+  const db = await getDB();
+  const result = await db.query(`
+    SELECT
+      strftime('%Y-%m', date) AS month,
+      SUM(CASE WHEN type = 'BUY'  THEN volume ELSE 0 END) AS bought,
+      SUM(CASE WHEN type = 'SELL' THEN volume ELSE 0 END) AS sold
+    FROM (
+      SELECT buyDate  AS date, 'BUY'  AS type, quantity * buyPrice  AS volume FROM buys
+      UNION ALL
+      SELECT sellDate AS date, 'SELL' AS type, quantity * sellPrice AS volume FROM sells
+    )
+    GROUP BY month
+    ORDER BY month ASC;
+  `);
+  return (result.values ?? []) as MonthlyTransaction[];
+}
