@@ -1,4 +1,4 @@
-# Stock-Profitier
+-+# Stock-Profitier
 
 <div align="center">
 <!-- 
@@ -23,7 +23,7 @@ This and the wish to create a bit more complicated svelte android app with datab
   <!-- Placeholder for preview screenshots -->
  <!-- <img src="static\RetroMorseTranslatorIRelease Graphic-export.png" alt="App graphics banner" width="600" /> -->
  Bigger icon 
-</div>
+</div>+
 
 Built with **Svelte** and wrapped with **Capacitor** to bring it to Android devices.
 
@@ -33,7 +33,8 @@ Built with **Svelte** and wrapped with **Capacitor** to bring it to Android devi
 Once you've created a project and installed dependencies with `npm install`, start a development server:
 
 ```sh
-npm run dev
+npm
+run dev
 
 # or start the server and open the app in a new browser tab
 npm run dev -- --open
@@ -52,6 +53,7 @@ To connect your phone with android studio:
 
 ```sh
 cd %LOCALAPPDATA%\Android\sdk\platform-tools
+cd C:\Users\tilfe\AppData\Local\Android\Sdk\platform-tools
 adb pair <PHONE_IP>:<PHONE_PORT>
 adb connect <PHONE_IP>:<PORT_PROVIDED>
 ```
@@ -60,10 +62,11 @@ To see console.log/warn.etc visit and insert IP & port
 chrome://inspect/#devices
 
 ## TODO
-- [] Investigate and review SQL database structure
-- [] Update Stock DB Entry when entering sell entry
-- [] Validate changes to entry (maybe change history)
-- [] Adjust charts to DB data
+- [] Review new SQL database structure
+- [] Graphes display db info
+- [] restyle Nav top bar
+
+
 - adb pull /data/data/com.krowastudios.stockprofitier/trades_db.db
 
 - Consider using index sql to optimize query (expecially for long query data)

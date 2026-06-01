@@ -17,11 +17,7 @@
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Drawer from '$lib/components/ui/drawer/index.js';
 
-	import {
-		enterNewBuyStockToDB,
-		enterNewSellStockToDB,
-		getAvailableSellEntries
-	} from '$lib/database/db';
+	import { addBuy, addSell, getOpenPositions, type OpenPosition } from '$lib/database/db';
 
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
@@ -37,16 +33,22 @@
 
 	let { onClose }: Props = $props();
 
+	// ─── Sell Combobox ───────────────────────────────────────────────────────
+
 	let sellOptionsLoaded = $state(false);
-	type Status = {
-		value: string;
-		label: string;
+
+	type SellOption = {
+		value: string;   // symbol
+		label: string;   // symbol (angezeigt)
 		quantity: number;
 	};
-	let sellOptions: Status[] = $state([]);
 
+	let sellOptions: SellOption[] = $state([]);
 	let sellComboBoxOpen = $state(false);
-	let selectedSellCB: Status | null = $state(null);
+	let selectedSellOption = $state<SellOption | null>(null);
+
+	// ─── Desktop / Mobile ────────────────────────────────────────────────────
+
 	let isDesktop = $state(false);
 
 	function checkScreenSize() {
@@ -61,92 +63,92 @@
 		}
 	});
 
+	// Sell-Optionen laden wenn auf "Sell" gewechselt wird
 	$effect(() => {
 		if (!buyEntry && !sellOptionsLoaded) {
 			fillSellOptions();
 			sellOptionsLoaded = true;
-		} else if (buyEntry) sellOptionsLoaded = false;
+		} else if (buyEntry) {
+			sellOptionsLoaded = false;
+			selectedSellOption = null;
+		}
 	});
 
-	function handleSellComboBox(value: string) {
-		selectedSellCB = sellOptions.find((sell) => sell.value === value) || null;
+	function handleSellComboBoxSelect(value: string) {
+		selectedSellOption = sellOptions.find((o) => o.value === value) ?? null;
 		sellComboBoxOpen = false;
 	}
 
 	async function fillSellOptions() {
 		sellOptions = [];
+		const positions = await getOpenPositions();
 
-		const availableEntries = await getAvailableSellEntries();
-
-		if (availableEntries.length === 0) {
-			sellOptions.push({ value: 'no-entries', label: 'No available sell entries', quantity: 0 });
+		if (positions.length === 0) {
+			sellOptions = [{ value: 'no-entries', label: 'Keine offenen Positionen', quantity: 0 }];
 			return;
 		}
 
-		for (const entry of availableEntries) {
-			sellOptions.push({ value: entry.id, label: entry.symbol, quantity: entry.availableQuantity });
-		}
+		sellOptions = positions.map((p) => ({
+			value: p.symbol,
+			label: `${p.symbol} (${p.openQuantity} Stk.)`,
+			quantity: p.openQuantity
+		}));
 	}
+
+	// ─── Form State ──────────────────────────────────────────────────────────
 
 	let buyEntry = $state(true);
 
 	let stockName = $state('');
-	let stockSymbols = [
-		'AAPL',
-		'MSFT',
-		'GOOGL',
-		'AMZN',
-		'TSLA',
-		'META',
-		'NVDA',
-		'NFLX',
-		'AMD',
-		'INTC'
-	];
-	let buyDate = $state<CalendarDate | undefined>();
+	let stockSymbols = ['', '']; // TODO: fill stock symbols with existing symbols from DB for autocomplete ANd style them to be not in the way of the keyboard
+	let entryDate = $state<CalendarDate | undefined>();
 	let price = $state(1.0);
-	let notes = $state('');
 	let quantity = $state(1);
+	let fees = $state(0.0);
+	let notes = $state('');
 
 	let showSuccessDialog = $state(false);
 	let savedEntryDetails = $state('');
 
-	// Computed reactive state
-	const isValidStockName = $derived(stockName.length > 0);
-	const isValidDate = $derived(buyDate !== undefined);
-	const isValidPrice = $derived(price > 0);
-	const isValidQuantity = $derived(quantity > 0);
+	// ─── Validation ──────────────────────────────────────────────────────────
+
+	const isValidStockName = $derived(
+		buyEntry ? stockName.length > 0 : selectedSellOption !== null && selectedSellOption.value !== 'no-entries'
+	);
+	const isValidDate     = $derived(entryDate !== undefined);
+	const isValidPrice    = $derived(price > 0);
+	const isValidQuantity = $derived(
+		quantity > 0 &&
+		(!buyEntry && selectedSellOption ? quantity <= selectedSellOption.quantity : true)
+	);
 	const isFormValid = $derived(isValidStockName && isValidDate && isValidPrice && isValidQuantity);
 
-	function saveEntry() {
-		// your save logic here
-		if (isFormValid) {
-			console.log('Saving entry:', {
-				type: buyEntry ? 'Buy' : 'Sell',
-				stockName,
-				date: buyDate,
-				price: price,
-				notes
-			});
+	// ─── Save ────────────────────────────────────────────────────────────────
 
-			if (buyEntry && buyDate) {
-				enterNewBuyStockToDB(
-					stockName,
-					buyDate.toDate(getLocalTimeZone()),
-					quantity,
-					price,
-					notes ?? undefined
-				);
-			} else if (!buyEntry) {
-				enterNewSellStockToDB();
-			}
+	async function saveEntry() {
+		if (!isFormValid || !entryDate) return;
 
-			fillSellOptions();
+		const date = entryDate.toDate(getLocalTimeZone());
 
-			// Set success message and show dialog
-			savedEntryDetails = `${buyEntry ? 'Buy' : 'Sell'} order for ${quantity} shares of ${stockName} at $${price.toFixed(2)} saved successfully!`;
-			showSuccessDialog = true;
+		if (buyEntry) {
+			await addBuy(stockName, date, quantity, price, fees, 'EUR', notes || undefined);
+			savedEntryDetails = `Kauf: ${quantity} x ${stockName} à ${price.toFixed(2)} € gespeichert.`;
+		} else if (selectedSellOption) {
+			await addSell(selectedSellOption.value, date, quantity, price, fees, 'EUR', notes || undefined);
+			savedEntryDetails = `Verkauf: ${quantity} x ${selectedSellOption.value} à ${price.toFixed(2)} € gespeichert.`;
 		}
+
+		// Form zurücksetzen
+		stockName = '';
+		entryDate = undefined;
+		price = 1.0;
+		quantity = 1;
+		fees = 0.0;
+		notes = '';
+		selectedSellOption = null;
+		sellOptionsLoaded = false;
+
+		showSuccessDialog = true;
 	}
 </script>
 
@@ -156,19 +158,18 @@
 		<h3 class="title">New Stock Entry</h3>
 	</div>
 
-	<!-- Buy / Sell Switch -->
+	<!-- Buy / Sell Toggle -->
 	<div class="buy-sell-toggle">
-		<button class:toggle-active={buyEntry} class="toggle-left" onclick={() => (buyEntry = true)}>
-			Buy
-		</button>
-		<button class:toggle-active={!buyEntry} class="toggle-right" onclick={() => (buyEntry = false)}>
-			Sell
-		</button>
+		<button class:toggle-active={buyEntry} class="toggle-left" onclick={() => (buyEntry = true)}>Buy</button>
+		<button class:toggle-active={!buyEntry} class="toggle-right" onclick={() => (buyEntry = false)}>Sell</button>
 	</div>
 
-	<!-- Stock Name -->
+	<!-- Stock Name / Symbol -->
 	<div class="field">
-		<label for="stock-name" class={isValidStockName ? 'text-green-600' : ''}> Stock Name </label>
+		<label for="stock-name" class={isValidStockName ? 'text-green-600' : ''}>
+			Stock Symbol
+		</label>
+
 		{#if buyEntry}
 			<input
 				id="stock-name"
@@ -185,24 +186,22 @@
 					<option value={symbol}></option>
 				{/each}
 			</datalist>
+
 		{:else if isDesktop}
-			<Popover.Root bind:open>
+			<Popover.Root bind:open={sellComboBoxOpen}>
 				<Popover.Trigger>
-					<Button variant="outline" class="w-[150px] justify-start">
-						{selectedSellCB ? selectedSellCB.label : '+ Set Selling Stock'}
+					<Button variant="outline" class="w-[200px] justify-start">
+						{selectedSellOption ? selectedSellOption.label : '+ Symbol wählen'}
 					</Button>
 				</Popover.Trigger>
-				<Popover.Content class="w-[200px] p-0" align="start">
+				<Popover.Content class="w-[220px] p-0" align="start">
 					<Command.Root>
-						<Command.Input placeholder="Select selling stock..." />
+						<Command.Input placeholder="Symbol suchen..." />
 						<Command.List>
-							<Command.Empty>No results found.</Command.Empty>
+							<Command.Empty>Keine Ergebnisse.</Command.Empty>
 							<Command.Group>
 								{#each sellOptions as option (option.value)}
-									<Command.Item
-										value={option.value}
-										onSelect={() => handleSellComboBox(option.value)}
-									>
+									<Command.Item value={option.value} onSelect={() => handleSellComboBoxSelect(option.value)}>
 										{option.label}
 									</Command.Item>
 								{/each}
@@ -211,25 +210,23 @@
 					</Command.Root>
 				</Popover.Content>
 			</Popover.Root>
+
 		{:else}
-			<Drawer.Root bind:open>
+			<Drawer.Root bind:open={sellComboBoxOpen}>
 				<Drawer.Trigger>
-					<Button variant="outline" class="w-[150px] justify-start">
-						{selectedSellCB ? selectedSellCB.label : '+ Set Selling Stock'}
+					<Button variant="outline" class="w-[200px] justify-start">
+						{selectedSellOption ? selectedSellOption.label : '+ Symbol wählen'}
 					</Button>
 				</Drawer.Trigger>
 				<Drawer.Content>
 					<div class="mt-4 border-t">
 						<Command.Root>
-							<Command.Input placeholder="Select selling stock..." />
+							<Command.Input placeholder="Symbol suchen..." />
 							<Command.List>
-								<Command.Empty>No results found.</Command.Empty>
+								<Command.Empty>Keine Ergebnisse.</Command.Empty>
 								<Command.Group>
 									{#each sellOptions as option (option.value)}
-										<Command.Item
-											value={option.value}
-											onSelect={() => handleSellComboBox(option.value)}
-										>
+										<Command.Item value={option.value} onSelect={() => handleSellComboBoxSelect(option.value)}>
 											{option.label}
 										</Command.Item>
 									{/each}
@@ -240,17 +237,25 @@
 				</Drawer.Content>
 			</Drawer.Root>
 		{/if}
+
+		<!-- Warnung wenn Quantity > verfügbare Stücke -->
+		{#if !buyEntry && selectedSellOption && quantity > selectedSellOption.quantity}
+			<p class="text-red-500 text-sm mt-1">
+				Max. {selectedSellOption.quantity} Stk. verfügbar
+			</p>
+		{/if}
 	</div>
 
 	<!-- Date -->
 	<div class="field">
-		<!-- 	<div class="flex flex-col gap-3">-->
-		<Label for="{id}-date" class="px-1">Date of birth</Label>
-		<Popover.Root bind:open>
-			<Popover.Trigger id="{id}-date">
+		<Label for={id + '-date'} class="px-1">
+			{buyEntry ? 'Kaufdatum' : 'Verkaufsdatum'}
+		</Label>
+		<Popover.Root bind:open={open}>
+			<Popover.Trigger id={id + '-date'}>
 				{#snippet child({ props })}
 					<Button {...props} variant="outline" class="w-48 justify-between font-normal">
-						{buyDate ? buyDate.toDate(getLocalTimeZone()).toLocaleDateString() : 'Select date'}
+						{entryDate ? entryDate.toDate(getLocalTimeZone()).toLocaleDateString() : 'Datum wählen'}
 						<ChevronDownIcon />
 					</Button>
 				{/snippet}
@@ -258,46 +263,42 @@
 			<Popover.Content class="w-auto overflow-hidden p-0" align="start">
 				<Calendar
 					type="single"
-					bind:value={buyDate}
+					bind:value={entryDate}
 					captionLayout="dropdown"
-					onValueChange={() => {
-						open = false;
-					}}
+					onValueChange={() => { open = false; }}
 					maxValue={today(getLocalTimeZone())}
 				/>
 			</Popover.Content>
 		</Popover.Root>
 	</div>
 
-	<!-- Quantitity -->
+	<!-- Quantity -->
 	<div class="field">
-		<label for="quantity" class={isValidQuantity ? 'text-green-600' : ''}> Quantity </label>
+		<label for="quantity" class={isValidQuantity ? 'text-green-600' : 'text-red-500'}>
+			Anzahl
+		</label>
 		<input
 			id="quantity"
 			bind:value={quantity}
 			type="number"
 			step="0.5"
-			min="0"
+			min="0.5"
 			placeholder="10"
 			class="rounded border px-2 py-1 transition outline-none {isValidQuantity
 				? 'border-green-500 focus:border-green-600'
-				: 'border-primary-300 focus:border-primary-400'}"
+				: 'border-red-400 focus:border-red-500'}"
 		/>
 	</div>
 
 	<!-- Price -->
 	<div class="field">
-		{#if buyEntry}
-			<label for="price">Purchase Price</label>
-		{:else}
-			<label for="price">Selling Price</label>
-		{/if}
+		<label for="price">{buyEntry ? 'Kaufpreis' : 'Verkaufspreis'} (pro Stk.)</label>
 		<input
 			id="price"
 			bind:value={price}
 			type="number"
 			step="0.01"
-			min="0"
+			min="0.01"
 			placeholder="152.35"
 			class="rounded border px-2 py-1 transition outline-none {isValidPrice
 				? 'border-green-500 focus:border-green-600'
@@ -305,47 +306,57 @@
 		/>
 	</div>
 
+	<!-- Fees -->
+	<div class="field">
+		<label for="fees">Gebühren (optional)</label>
+		<input
+			id="fees"
+			bind:value={fees}
+			type="number"
+			step="0.01"
+			min="0"
+			placeholder="3.90"
+			class="rounded border px-2 py-1 transition outline-none border-primary-300 focus:border-primary-400"
+		/>
+	</div>
+
 	<!-- Notes -->
 	<div class="field">
-		<label for="notes">Notes</label>
+		<label for="notes">Notizen</label>
 		<textarea
 			id="notes"
 			bind:value={notes}
 			rows="2"
-			placeholder="Optional notes..."
+			placeholder="Optional..."
 			class="px-2 py-1 border border-color-sidebar-border rounded-md outline-none transition"
 		></textarea>
 	</div>
 
 	<!-- Actions -->
 	<div class="actions">
-		<button class="btn-cancel" onclick={() => onClose?.()}>Cancel</button>
+		<button class="btn-cancel" onclick={() => onClose?.()}>Abbrechen</button>
 		<button
 			class="active:brightness-90 active:scale-95 transition-transform btn-standard"
 			style:background-color={!isFormValid ? 'var(--color-primary-deactivated)' : ''}
 			style:opacity={!isFormValid ? '0.6' : '1'}
 			onclick={saveEntry}
 		>
-			Save Entry
+			Speichern
 		</button>
 	</div>
 </div>
 
+<!-- Success Dialog -->
 <AlertDialog bind:open={showSuccessDialog}>
 	<AlertDialogContent>
 		<AlertDialogHeader>
-			<AlertDialogTitle>Entry Saved</AlertDialogTitle>
+			<AlertDialogTitle>Gespeichert</AlertDialogTitle>
 			<AlertDialogDescription>
 				{savedEntryDetails}
 			</AlertDialogDescription>
 		</AlertDialogHeader>
 		<AlertDialogFooter>
-			<AlertDialogAction
-				onclick={() => {
-					showSuccessDialog = false;
-					onClose?.();
-				}}
-			>
+			<AlertDialogAction onclick={() => { showSuccessDialog = false; onClose?.(); }}>
 				OK
 			</AlertDialogAction>
 		</AlertDialogFooter>

@@ -1,122 +1,195 @@
 import { Capacitor } from '@capacitor/core';
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 
-
 const sqlite = new SQLiteConnection(CapacitorSQLite);
 let db: SQLiteDBConnection | undefined;
 
+// ─── Init ───────────────────────────────────────────────────────────────────
 
+export async function initDB(): Promise<SQLiteDBConnection> {
+  if (db) return db;
 
-export async function initDB() {
-  try {
-    if (db) return db;
+  if (!Capacitor.isNativePlatform()) throw new Error("SQLite only supported on native");
 
-    if (!Capacitor.isNativePlatform()) throw new Error("SQLite only supported on native");
-
-    // Check if a connection already exists
-    const isConn = await sqlite.isConnection("trades_db", false);
-    if (isConn.result) {
-      // Retrieve existing connection
-      db = await sqlite.retrieveConnection("trades_db", false);
-      // Make sure the connection is open
-      await db.open();
-    } else {
-      // Create a new connection
-      db = await sqlite.createConnection("trades_db", false, "no-encryption", 1, false);
-      await db.open();
-      // Create table
-      await db.execute(`
-        CREATE TABLE IF NOT EXISTS buys (
-        id TEXT PRIMARY KEY,
-        symbol TEXT NOT NULL,
-        buyDate DATE NOT NULL,
-        quantity REAL NOT NULL,
-        buyPrice REAL NOT NULL,
-        note TEXT,
+  const isConn = await sqlite.isConnection("trades_db", false);
+  if (isConn.result) {
+    db = await sqlite.retrieveConnection("trades_db", false);
+    await db.open();
+  } else {
+    db = await sqlite.createConnection("trades_db", false, "no-encryption", 1, false);
+    await db.open();
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS buys (
+        id        TEXT PRIMARY KEY,
+        symbol    TEXT NOT NULL,
+        buyDate   TEXT NOT NULL,
+        quantity  REAL NOT NULL,
+        buyPrice  REAL NOT NULL,
+        fees      REAL NOT NULL DEFAULT 0,
+        currency  TEXT NOT NULL DEFAULT 'EUR',
+        note      TEXT,
         createdAt TEXT NOT NULL,
         updatedAt TEXT
-        );
-      `);
+      );
+    `);
 
-      await db.execute(`
-        CREATE TABLE IF NOT EXISTS sells (
-        id TEXT PRIMARY KEY,
-        buyId TEXT NOT NULL,
-        sellDate DATE NOT NULL,
-        quantity REAL NOT NULL,
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS sells (
+        id        TEXT PRIMARY KEY,
+        symbol    TEXT NOT NULL,
+        sellDate  TEXT NOT NULL,
+        quantity  REAL NOT NULL,
         sellPrice REAL NOT NULL,
+        fees      REAL NOT NULL DEFAULT 0,
+        currency  TEXT NOT NULL DEFAULT 'EUR',
+        note      TEXT,
         createdAt TEXT NOT NULL,
-        updatedAt TEXT,
-        FOREIGN KEY (buyId) REFERENCES buys(id)
-        );
-      `);
-    }
+        updatedAt TEXT
+      );
+    `);
 
-    return db;
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS sell_lots (
+        id      TEXT PRIMARY KEY,
+        sellId  TEXT NOT NULL REFERENCES sells(id),
+        buyId   TEXT NOT NULL REFERENCES buys(id),
+        quantity REAL NOT NULL
+      );
+    `);
   }
-  catch (error) {
-    console.error("Error initializing database: ", error);
-    throw new Error("Failed to initialize database. Restart the app");
-  }
+
+  return db;
 }
 
-export async function getDB() {
-  if (!db) {
-    await initDB();
-  }
+export async function getDB(): Promise<SQLiteDBConnection> {
+  if (!db) await initDB();
   return db!;
 }
 
-export async function getDBAllBuys() {
-  const database = await getDB();
+// ─── Buys ────────────────────────────────────────────────────────────────────
 
-  const result = await db!.query(`SELECT * FROM buys ORDER BY buyDate DESC;`);
+export async function getAllBuys() {
+  const db = await getDB();
+  const result = await db.query(`SELECT * FROM buys ORDER BY buyDate DESC;`);
   return result.values ?? [];
 }
 
-export async function addTestTrade() {
-  const database = await getDB();
-
+export async function addBuy(
+  symbol: string,
+  buyDate: Date,
+  quantity: number,
+  buyPrice: number,
+  fees: number = 0,
+  currency: string = 'EUR',
+  note?: string
+) {
+  const db = await getDB();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
-  await db!.run(`
-    INSERT INTO buys (id, symbol, buyDate, quantity, buyPrice, note, createdAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-  `, [id, 'Cloudflare', now, 10, 150.00, "Test note", now, now]);
+
+  await db.run(
+    `INSERT INTO buys (id, symbol, buyDate, quantity, buyPrice, fees, currency, note, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    [id, symbol, buyDate.toISOString(), quantity, buyPrice, fees, currency, note ?? null, now]
+  );
+
+  return id;
 }
 
-export async function enterNewBuyStockToDB(symbol: string, buyDate: Date, quantity: number, buyPrice: number, note?: string) {
-  const id = crypto.randomUUID(); // TODO check if it actually creates a unique one and if so remove the variable and insert directly
-  const now = new Date().toISOString();
-
-  try {
-    await db!.run(`
-      INSERT INTO buys (id, symbol, buyDate, quantity, buyPrice, note, createdAt)
-      VALUES ();
-      `, [id, symbol, buyDate.toISOString, quantity, buyPrice, note ?? null, now]);
-
-  } catch (error) {
-    console.error(`Error inserting buy ${symbol}:`, error);
-  }
+export async function deleteBuy(id: string) {
+  const db = await getDB();
+  await db.run(`DELETE FROM buys WHERE id = ?;`, [id]);
 }
 
-export async function enterNewSellStockToDB() {
-  const database = await getDB();
+// ─── Sells ───────────────────────────────────────────────────────────────────
 
-  // TODO: code functionality
-}
-
-export async function getAvailableSellEntries() {
-  const database = await getDB();
-
-  const result = await db!.query(`
-    SELECT buys.id, buys.symbol,
-      (buys.quantity - IFNULL((SELECT sum(quantity) FROM sells WHERE buyId = buys.id), 0)) AS availableQuantity
-    FROM buys
-      HAVING availableQuantity > 0
-    ORDER BY buys.buyDate DESC;
-  `);
-
+export async function getAllSells() {
+  const db = await getDB();
+  const result = await db.query(`SELECT * FROM sells ORDER BY sellDate DESC;`);
   return result.values ?? [];
 }
 
+export async function addSell(
+  symbol: string,
+  sellDate: Date,
+  quantity: number,
+  sellPrice: number,
+  fees: number = 0,
+  currency: string = 'EUR',
+  note?: string
+) {
+  const db = await getDB();
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  await db.run(
+    `INSERT INTO sells (id, symbol, sellDate, quantity, sellPrice, fees, currency, note, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    [id, symbol, sellDate.toISOString(), quantity, sellPrice, fees, currency, note ?? null, now]
+  );
+
+  return id;
+}
+
+export async function deleteSell(id: string) {
+  const db = await getDB();
+  await db.run(`DELETE FROM sells WHERE id = ?;`, [id]);
+}
+
+// ─── Queries ─────────────────────────────────────────────────────────────────
+
+/** Offene Positionen: wie viele Stück je Symbol noch gehalten werden */
+export interface OpenPosition {
+  symbol: string;
+  openQuantity: number;
+}
+
+export async function getOpenPositions(): Promise<OpenPosition[]> {
+  const db = await getDB();
+  const result = await db.query(`
+    SELECT
+      symbol,
+      SUM(CASE WHEN type = 'BUY'  THEN quantity ELSE 0 END) -
+      SUM(CASE WHEN type = 'SELL' THEN quantity ELSE 0 END) AS openQuantity
+    FROM (
+      SELECT symbol, 'BUY'  AS type, quantity FROM buys
+      UNION ALL
+      SELECT symbol, 'SELL' AS type, quantity FROM sells
+    )
+    GROUP BY symbol
+    HAVING openQuantity > 0;
+  `);
+  return (result.values ?? []) as OpenPosition[];
+}
+
+/** Realisierter Gewinn/Verlust pro Symbol */
+export async function getRealizedPnL() {
+  const db = await getDB();
+  const result = await db.query(`
+    SELECT
+      s.symbol,
+      ROUND(SUM(s.quantity * s.sellPrice) - SUM(s.fees), 2) AS sellVolume,
+      ROUND(SUM(b.quantity * b.buyPrice)  + SUM(b.fees), 2) AS buyVolume,
+      ROUND(
+        (SUM(s.quantity * s.sellPrice) - SUM(s.fees)) -
+        (SUM(b.quantity * b.buyPrice)  + SUM(b.fees)),
+        2
+      ) AS realizedPnL
+    FROM sells s
+    JOIN buys b ON b.symbol = s.symbol
+    GROUP BY s.symbol;
+  `);
+  return result.values ?? [];
+}
+
+/** Alle Transaktionen eines Symbols chronologisch */
+export async function getTransactionHistory(symbol: string) {
+  const db = await getDB();
+  const result = await db.query(`
+    SELECT 'BUY'  AS type, buyDate  AS date, quantity, buyPrice  AS price, fees FROM buys  WHERE symbol = ?
+    UNION ALL
+    SELECT 'SELL' AS type, sellDate AS date, quantity, sellPrice AS price, fees FROM sells WHERE symbol = ?
+    ORDER BY date;
+  `, [symbol, symbol]);
+  return result.values ?? [];
+}

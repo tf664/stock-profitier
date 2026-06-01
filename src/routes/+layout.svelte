@@ -62,7 +62,7 @@
 	<div class="flex items-center">
 		<a
 			href="#top"
-			onclick={(e) => scrollToSection(e, 'top')}
+			on:click={(e) => scrollToSection(e, 'top')}
 			class="font-heading font-medium text-foreground text-s hover:text-primary tracking-tight transition-colors"
 		>
 			<span class="font-bold; text-primary">&lt;</span>Stock Profitier<span class="text-primary"
@@ -91,7 +91,7 @@
 			>() =&gt;<!-- --> Enter new data</button
 		>
 
-		<button onclick={toggleMode} class="relative flex justify-center items-center">
+		<button on:click={toggleMode} class="relative flex justify-center items-center">
 			<Sun
 				class="w-[1.2rem] h-[1.2rem] rotate-0 dark:-rotate-90 scale-100 dark:scale-0 transition-all duration-300 ease-in-out"
 			/>
@@ -100,8 +100,8 @@
 			/>
 		</button>
 
-		<button
-			onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
+			<button
+				on:click={() => (mobileMenuOpen = !mobileMenuOpen)}
 			class="md:hidden relative flex justify-center items-center"
 			aria-label="Open menu"
 		>
@@ -120,16 +120,16 @@
 {#if mobileMenuOpen}
 	<div class="lg:hidden bg-background p-4 border-foreground/10 border-b">
 		<nav class="flex flex-col gap-1">
-			<a
-				href="#barchart"
-				onclick={() => (mobileMenuOpen = false)}
+				<a
+					href="#barchart"
+					on:click={() => (mobileMenuOpen = false)}
 				class="inline-flex items-center gap-1 text-[10px] text-foreground/60 hover:text-primary uppercase tracking-[0.2em] transition-colors"
 			>
 				Barchart</a
 			>
-			<a
-				href="/about"
-				onclick={() => (mobileMenuOpen = false)}
+				<a
+					href="/about"
+					on:click={() => (mobileMenuOpen = false)}
 				class="inline-flex items-center gap-1 text-[10px] text-foreground/60 hover:text-primary uppercase tracking-[0.2em] transition-colors"
 			>
 				About</a
