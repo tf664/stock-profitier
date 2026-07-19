@@ -7,9 +7,9 @@
 	import DebugMode from './debug/DebugMode.svelte';
 	let debugModeComponent: DebugMode | undefined = undefined;
 
-	import PortfolioPieChart from '$lib/components/ui/charts/PortfolioPieChart.svelte';
-	import MonthlyVolumeChart from '$lib/components/ui/charts/MonthlyVolumeChart.svelte';
-	import OpenPositionsChart from '$lib/components/ui/charts/OpenPositionsChart.svelte';
+	import PortfolioPieChart from '$lib/components/charts/PortfolioPieChart.svelte';
+	import MonthlyVolumeChart from '$lib/components/charts/MonthlyVolumeChart.svelte';
+	import OpenPositionsChart from '$lib/components/charts/OpenPositionsChart.svelte';
 
 	let showDataEntry = $state(false);
 	let result = $state('');
