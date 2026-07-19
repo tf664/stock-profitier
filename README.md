@@ -18,7 +18,6 @@ _This project was made without heavily relying on AI coding to avoid becoming a 
 
 This and the wish to create a bit more complicated svelte android app with database while also trying out the flowbite chart library was the inspiration to create Stock Profitier
 
-
 <div align="center">
   <!-- Placeholder for preview screenshots -->
  <!-- <img src="static\RetroMorseTranslatorIRelease Graphic-export.png" alt="App graphics banner" width="600" /> -->
@@ -26,7 +25,6 @@ This and the wish to create a bit more complicated svelte android app with datab
 </div>+
 
 Built with **Svelte** and wrapped with **Capacitor** to bring it to Android devices.
-
 
 ## Developing
 
@@ -62,16 +60,17 @@ To see console.log/warn.etc visit and insert IP & port
 chrome://inspect/#devices
 
 ## TODO
-- [] Review new SQL database structure
-- [] Graphes display db info
-- [] Bug: Sell options don't update and remove themselves
-- [] Charts  don't update
-- [] restyle Nav top bar
-- [] Debug mode
-- [] Language settings
-- [] Clicking on the logo doesn't scroll to the top top
 
+- [] Adjust primary and secondary colour in layout.css
+- [] Clicking on the logo doesn't scroll to the top top
+- [] Review new database structure
+- [] Test with real data from Notion table
+- [] Charts don't update after entry
+- [] More charts
+- [] Language settings
+
+- [] Include SankeyMatic Diagram and saving
 
 - adb pull /data/data/com.krowastudios.stockprofitier/trades_db.db
 
-- Consider using index sql to optimize query (expecially for long query data)
+- [Note] Consider using index sql to optimize query (expecially for long query data)

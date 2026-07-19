@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { BarChart, NewDataEntry } from '$lib';
-	import { addBuy, getAllBuys } from '$lib/database/db';
-	import { Capacitor } from '@capacitor/core';
 	import '../components.css';
 
 	import DebugMode from './debug/DebugMode.svelte';
@@ -29,23 +27,20 @@
 		</div>
 
 		<div>
-			<div class="title-wrapper">
+			<div class="z-1 title-wrapper">
 				<button
 					type="button"
 					class="select-none settings-title"
 					onclick={() => debugModeComponent?.handleTitleTap()}
 					aria-label="Activate Debug Mode"
 				>
-					Text um Debug Mode zu aktivieren
+					Debug Mode
 				</button>
 			</div>
 			<DebugMode bind:this={debugModeComponent} />
 		</div>
 
-		<h3>Graphes</h3>
-		<!-- <div id="barchart" style="margin: 0.5rem;">
-			<BarChart />
-		</div> -->
+		<h3 class="font-semibold text-lg text-(--secondary)">Graphes</h3>
 
 		<div class="flex flex-col gap-4 p-4">
 			<PortfolioPieChart />
