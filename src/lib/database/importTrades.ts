@@ -26,5 +26,22 @@ function processData(results: Papa.ParseResult<any>) {
 			console.log(`Skipping ${row['KÜRZEL']} as it is not executed.`);
 			continue;
 		}
+
+		// Async normalizeTrade(row) machen?
+
+		// Nur ASSETKLASSE "SHARE" berücksichtigen
+
+		// Felder mappen symbol: KÜRZEL buyDate: VALUTADATUM quantity: STÜCKE fees: GEBÜHREN IN KONTOWÄHRUNG ...
+
+		// Kaufkurs berechnen aus "STÜCKE" "ANLAGEBETRAG IN KONTOWÄHRUNG" und "GEBÜHREN IN KONTOWÄHRUNG"
+
+		// Zahlen richtig parsen 94,4 -> 94.4
+
+		// BUY importieren
+
+		// SELL importieren
+
+		// isin, wkn, assetClass, exchange in db? isin als klarer identifier
+		// BUY | anlagebtrag -> kaufwert, gebühren -> kosten | SELL | Anlagebtrag -> Verkaufserlös, gebühren -> kosten
 	}
 }
