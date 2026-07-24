@@ -61,15 +61,17 @@ chrome://inspect/#devices
 
 ## TODO
 
-- [] Adjust primary and secondary colour in layout.css
-- [] Clicking on the logo doesn't scroll to the top top
+- [x] Adjust primary and secondary colour in layout.css
+- [x] Clicking on the logo doesn't scroll to the top top
 - [] Review new database structure
 - [] Test with real data from Notion table
 - [] Charts don't update after entry
 - [] More charts
+- [] Settings page
 - [] Language settings
 
 - [] Include SankeyMatic Diagram and saving
+- [] Export and import function
 
 - adb pull /data/data/com.krowastudios.stockprofitier/trades_db.db
 

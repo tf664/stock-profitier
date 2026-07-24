@@ -7,29 +7,21 @@
 
 	import Sun from '@lucide/svelte/icons/sun';
 	import MoonStars from '@lucide/svelte/icons/moon';
-	import { FileSliders } from '@lucide/svelte';
 
 	let mobileMenuOpen = $state(false);
 
-	async function scrollToSection(event: MouseEvent, id: string) {
+	async function scrollToTop(event: MouseEvent) {
 		event.preventDefault();
 
 		if ($page.url.pathname !== '/') {
-			// Navigate to home page first
 			await goto('/');
-			// Wait a bit for navigation to complete
-			setTimeout(() => {
-				const element = document.getElementById(id);
-				if (element) {
-					element.scrollIntoView({ behavior: 'smooth' });
-				}
-			}, 100);
-		} else {
-			const element = document.getElementById(id);
-			if (element) {
-				element.scrollIntoView({ behavior: 'smooth' });
-			}
 		}
+
+		window.scrollTo({
+			top: 0,
+			behavior: 'smooth'
+		});
+
 		mobileMenuOpen = false;
 	}
 </script>
@@ -39,15 +31,14 @@
 		class="flex justify-between items-center bg-background/80 backdrop-blur-md px-4 md:px-6 border-foreground/10 border-b h-16"
 	>
 		<div>
-			<a
-				href="#top"
-				onclick={(e) => scrollToSection(e, 'top')}
+			<button
+				onclick={(e) => scrollToTop(e)}
 				class="font-heading font-medium text-foreground text-s hover:text-primary tracking-tight"
 			>
 				<span class="font-bold; text-primary">&lt;</span>Stock Profitier<span class="text-primary"
 					>/&gt;</span
 				>
-			</a>
+			</button>
 		</div>
 
 		<nav class="hidden md:flex items-center gap-12">
@@ -60,7 +51,7 @@
 
 			<a
 				href="/settings"
-				class="inline-flex items-center gap-1 text-[10px] text-foreground/60uppercase tracking-[0.2em] transition-colors"
+				class="text-[10px] text-foreground/60 uppercase tracking-[0.2em] transition-colors"
 			>
 				Settings</a
 			>
