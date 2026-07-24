@@ -43,6 +43,12 @@
 
 		<nav class="hidden md:flex items-center gap-12">
 			<a
+				href="/import"
+				class="text-[10px] text-foreground/60 uppercase tracking-[0.2em] transition-colors"
+			>
+				Import</a
+			>
+			<a
 				href="/about"
 				class="text-[10px] text-foreground/60 uppercase tracking-[0.2em] transition-colors"
 			>
@@ -97,6 +103,13 @@
 					class="inline-flex items-center gap-1 text-[10px] text-foreground/60 uppercase tracking-[0.2em]"
 				>
 					#Portfolio-Verteilung</a
+				>
+				<a
+					href="/import"
+					onclick={() => (mobileMenuOpen = false)}
+					class="inline-flex items-center gap-1 text-[10px] text-foreground/60 uppercase tracking-[0.2em]"
+				>
+					Import</a
 				>
 				<a
 					href="/about"

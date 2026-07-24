@@ -26,6 +26,7 @@
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.17",
 		"@types/node": "^22",
+		"@types/papaparse": "^5.5.2",
 		"bits-ui": "^2.15.4",
 		"clsx": "^2.1.1",
 		"eslint": "^9.39.1",
@@ -56,6 +57,7 @@
 		"@flowbite-svelte-plugins/chart": "^0.2.4",
 		"apexcharts": "^5.3.6",
 		"lucide-svelte": "^0.562.0",
-		"mode-watcher": "^0.5.1"
+		"mode-watcher": "^0.5.1",
+		"papaparse": "^5.5.4"
 	}
 }

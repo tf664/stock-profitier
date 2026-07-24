@@ -10,7 +10,6 @@
 	import OpenPositionsChart from '$lib/components/charts/OpenPositionsChart.svelte';
 
 	let showDataEntry = $state(false);
-	let result = $state('');
 </script>
 
 <main>
@@ -40,9 +39,12 @@
 			<br />
 			<h3 class="font-semibold text-primary text-2xl">Graphes</h3>
 			<div class="flex flex-col gap-4 p-4">
+				<h4 class="font-semibold text-primary text-xl">Umgesetzt</h4>
+				<!-- Umsetzungs Charts mit Filter nach Jahr & Gesamt -->
 				<PortfolioPieChart />
 				<MonthlyVolumeChart />
 				<OpenPositionsChart />
+				<BarChart />
 			</div>
 		</div>
 	</div>

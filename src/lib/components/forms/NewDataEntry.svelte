@@ -38,8 +38,8 @@
 	let sellOptionsLoaded = $state(false);
 
 	type SellOption = {
-		value: string;   // symbol
-		label: string;   // symbol (angezeigt)
+		value: string; // symbol
+		label: string; // symbol (angezeigt)
 		quantity: number;
 	};
 
@@ -113,13 +113,15 @@
 	// ─── Validation ──────────────────────────────────────────────────────────
 
 	const isValidStockName = $derived(
-		buyEntry ? stockName.length > 0 : selectedSellOption !== null && selectedSellOption.value !== 'no-entries'
+		buyEntry
+			? stockName.length > 0
+			: selectedSellOption !== null && selectedSellOption.value !== 'no-entries'
 	);
-	const isValidDate     = $derived(entryDate !== undefined);
-	const isValidPrice    = $derived(price > 0);
+	const isValidDate = $derived(entryDate !== undefined);
+	const isValidPrice = $derived(price > 0);
 	const isValidQuantity = $derived(
 		quantity > 0 &&
-		(!buyEntry && selectedSellOption ? quantity <= selectedSellOption.quantity : true)
+			(!buyEntry && selectedSellOption ? quantity <= selectedSellOption.quantity : true)
 	);
 	const isFormValid = $derived(isValidStockName && isValidDate && isValidPrice && isValidQuantity);
 
@@ -134,7 +136,15 @@
 			await addBuy(stockName, date, quantity, price, fees, 'EUR', notes || undefined);
 			savedEntryDetails = `Kauf: ${quantity} x ${stockName} à ${price.toFixed(2)} € gespeichert.`;
 		} else if (selectedSellOption) {
-			await addSell(selectedSellOption.value, date, quantity, price, fees, 'EUR', notes || undefined);
+			await addSell(
+				selectedSellOption.value,
+				date,
+				quantity,
+				price,
+				fees,
+				'EUR',
+				notes || undefined
+			);
 			savedEntryDetails = `Verkauf: ${quantity} x ${selectedSellOption.value} à ${price.toFixed(2)} € gespeichert.`;
 		}
 
@@ -160,15 +170,17 @@
 
 	<!-- Buy / Sell Toggle -->
 	<div class="buy-sell-toggle">
-		<button class:toggle-active={buyEntry} class="toggle-left" onclick={() => (buyEntry = true)}>Buy</button>
-		<button class:toggle-active={!buyEntry} class="toggle-right" onclick={() => (buyEntry = false)}>Sell</button>
+		<button class:toggle-active={buyEntry} class="toggle-left" onclick={() => (buyEntry = true)}
+			>Buy</button
+		>
+		<button class:toggle-active={!buyEntry} class="toggle-right" onclick={() => (buyEntry = false)}
+			>Sell</button
+		>
 	</div>
 
 	<!-- Stock Name / Symbol -->
 	<div class="field">
-		<label for="stock-name" class={isValidStockName ? 'text-green-600' : ''}>
-			Stock Symbol
-		</label>
+		<label for="stock-name" class={isValidStockName ? 'text-green-600' : ''}> Stock Symbol </label>
 
 		{#if buyEntry}
 			<input
@@ -186,22 +198,24 @@
 					<option value={symbol}></option>
 				{/each}
 			</datalist>
-
 		{:else if isDesktop}
 			<Popover.Root bind:open={sellComboBoxOpen}>
 				<Popover.Trigger>
-					<Button variant="outline" class="w-[200px] justify-start">
+					<Button variant="outline" class="justify-start w-[200px]">
 						{selectedSellOption ? selectedSellOption.label : '+ Symbol wählen'}
 					</Button>
 				</Popover.Trigger>
-				<Popover.Content class="w-[220px] p-0" align="start">
+				<Popover.Content class="p-0 w-[220px]" align="start">
 					<Command.Root>
 						<Command.Input placeholder="Symbol suchen..." />
 						<Command.List>
 							<Command.Empty>Keine Ergebnisse.</Command.Empty>
 							<Command.Group>
 								{#each sellOptions as option (option.value)}
-									<Command.Item value={option.value} onSelect={() => handleSellComboBoxSelect(option.value)}>
+									<Command.Item
+										value={option.value}
+										onSelect={() => handleSellComboBoxSelect(option.value)}
+									>
 										{option.label}
 									</Command.Item>
 								{/each}
@@ -210,11 +224,10 @@
 					</Command.Root>
 				</Popover.Content>
 			</Popover.Root>
-
 		{:else}
 			<Drawer.Root bind:open={sellComboBoxOpen}>
 				<Drawer.Trigger>
-					<Button variant="outline" class="w-[200px] justify-start">
+					<Button variant="outline" class="justify-start w-[200px]">
 						{selectedSellOption ? selectedSellOption.label : '+ Symbol wählen'}
 					</Button>
 				</Drawer.Trigger>
@@ -226,7 +239,10 @@
 								<Command.Empty>Keine Ergebnisse.</Command.Empty>
 								<Command.Group>
 									{#each sellOptions as option (option.value)}
-										<Command.Item value={option.value} onSelect={() => handleSellComboBoxSelect(option.value)}>
+										<Command.Item
+											value={option.value}
+											onSelect={() => handleSellComboBoxSelect(option.value)}
+										>
 											{option.label}
 										</Command.Item>
 									{/each}
@@ -240,7 +256,7 @@
 
 		<!-- Warnung wenn Quantity > verfügbare Stücke -->
 		{#if !buyEntry && selectedSellOption && quantity > selectedSellOption.quantity}
-			<p class="text-red-500 text-sm mt-1">
+			<p class="mt-1 text-red-500 text-sm">
 				Max. {selectedSellOption.quantity} Stk. verfügbar
 			</p>
 		{/if}
@@ -251,21 +267,23 @@
 		<Label for={id + '-date'} class="px-1">
 			{buyEntry ? 'Kaufdatum' : 'Verkaufsdatum'}
 		</Label>
-		<Popover.Root bind:open={open}>
+		<Popover.Root bind:open>
 			<Popover.Trigger id={id + '-date'}>
 				{#snippet child({ props })}
-					<Button {...props} variant="outline" class="w-48 justify-between font-normal">
+					<Button {...props} variant="outline" class="justify-between w-48 font-normal">
 						{entryDate ? entryDate.toDate(getLocalTimeZone()).toLocaleDateString() : 'Datum wählen'}
 						<ChevronDownIcon />
 					</Button>
 				{/snippet}
 			</Popover.Trigger>
-			<Popover.Content class="w-auto overflow-hidden p-0" align="start">
+			<Popover.Content class="p-0 w-auto overflow-hidden" align="start">
 				<Calendar
 					type="single"
 					bind:value={entryDate}
 					captionLayout="dropdown"
-					onValueChange={() => { open = false; }}
+					onValueChange={() => {
+						open = false;
+					}}
 					maxValue={today(getLocalTimeZone())}
 				/>
 			</Popover.Content>
@@ -316,7 +334,7 @@
 			step="0.01"
 			min="0"
 			placeholder="3.90"
-			class="rounded border px-2 py-1 transition outline-none border-primary-300 focus:border-primary-400"
+			class="px-2 py-1 border border-primary-300 focus:border-primary-400 rounded outline-none transition"
 		/>
 	</div>
 
@@ -336,10 +354,9 @@
 	<div class="actions">
 		<button class="btn-cancel" onclick={() => onClose?.()}>Abbrechen</button>
 		<button
-			class="active:brightness-90 active:scale-95 transition-transform btn-standard"
-			style:background-color={!isFormValid ? 'var(--color-primary-deactivated)' : ''}
-			style:opacity={!isFormValid ? '0.6' : '1'}
+			class="active:scale-95 transition-transform btn-standard"
 			onclick={saveEntry}
+			disabled={!isFormValid}
 		>
 			Speichern
 		</button>
@@ -356,7 +373,12 @@
 			</AlertDialogDescription>
 		</AlertDialogHeader>
 		<AlertDialogFooter>
-			<AlertDialogAction onclick={() => { showSuccessDialog = false; onClose?.(); }}>
+			<AlertDialogAction
+				onclick={() => {
+					showSuccessDialog = false;
+					onClose?.();
+				}}
+			>
 				OK
 			</AlertDialogAction>
 		</AlertDialogFooter>

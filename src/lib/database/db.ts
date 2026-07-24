@@ -19,43 +19,51 @@ export async function initDB(): Promise<SQLiteDBConnection> {
 		db = await sqlite.createConnection('trades_db', false, 'no-encryption', 1, false);
 		await db.open();
 		await db.execute(`
-      CREATE TABLE IF NOT EXISTS buys (
-        id        TEXT PRIMARY KEY,
-        symbol    TEXT NOT NULL,
-        buyDate   TEXT NOT NULL,
-        quantity  REAL NOT NULL,
-        buyPrice  REAL NOT NULL,
-        fees      REAL NOT NULL DEFAULT 0,
-        currency  TEXT NOT NULL DEFAULT 'EUR',
-        note      TEXT,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT
-      );
-    `);
+  CREATE TABLE IF NOT EXISTS buys (
+    id            TEXT PRIMARY KEY,
+    symbol        TEXT NOT NULL,
+    name          TEXT NOT NULL,
+    assetClass    TEXT,
+    buyDate       TEXT NOT NULL,
+    quantity      REAL NOT NULL,
+    buyPrice      REAL NOT NULL,
+    fees          REAL NOT NULL DEFAULT 0,
+    grossAmount   REAL NOT NULL DEFAULT 0,
+    currency      TEXT NOT NULL DEFAULT 'EUR',
+    exchange      TEXT,
+    note          TEXT,
+    createdAt     TEXT NOT NULL,
+    updatedAt     TEXT
+  );
+`);
 
 		await db.execute(`
-      CREATE TABLE IF NOT EXISTS sells (
-        id        TEXT PRIMARY KEY,
-        symbol    TEXT NOT NULL,
-        sellDate  TEXT NOT NULL,
-        quantity  REAL NOT NULL,
-        sellPrice REAL NOT NULL,
-        fees      REAL NOT NULL DEFAULT 0,
-        currency  TEXT NOT NULL DEFAULT 'EUR',
-        note      TEXT,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT
-      );
-    `);
+  CREATE TABLE IF NOT EXISTS sells (
+    id            TEXT PRIMARY KEY,
+    symbol        TEXT NOT NULL,
+    name          TEXT NOT NULL,
+    assetClass    TEXT,
+    sellDate      TEXT NOT NULL,
+    quantity      REAL NOT NULL,
+    sellPrice     REAL NOT NULL,
+    fees          REAL NOT NULL DEFAULT 0,
+    grossAmount   REAL NOT NULL DEFAULT 0,
+    currency      TEXT NOT NULL DEFAULT 'EUR',
+    exchange      TEXT,
+    note          TEXT,
+    createdAt     TEXT NOT NULL,
+    updatedAt     TEXT
+  );
+`);
 
 		await db.execute(`
-      CREATE TABLE IF NOT EXISTS sell_lots (
-        id      TEXT PRIMARY KEY,
-        sellId  TEXT NOT NULL REFERENCES sells(id),
-        buyId   TEXT NOT NULL REFERENCES buys(id),
-        quantity REAL NOT NULL
-      );
-    `);
+  CREATE TABLE IF NOT EXISTS sell_lots (
+    id        TEXT PRIMARY KEY,
+    sellId    TEXT NOT NULL REFERENCES sells(id),
+    buyId     TEXT NOT NULL REFERENCES buys(id),
+    quantity  REAL NOT NULL
+  );
+`);
 	}
 
 	return db;
@@ -87,9 +95,10 @@ export async function addBuy(
 	const id = crypto.randomUUID();
 	const now = new Date().toISOString();
 
+	//addBuy("NVDA", "Nvidia Corp", "Stock", new Date(), 5, 180, 1.99, "NASDAQ")
 	await db.run(
 		`INSERT INTO buys (id, symbol, buyDate, quantity, buyPrice, fees, currency, note, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
 		[id, symbol, buyDate.toISOString(), quantity, buyPrice, fees, currency, note ?? null, now]
 	);
 
